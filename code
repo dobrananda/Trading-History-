@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Data</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+            font-size: 16px; /* Default font size */
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Container for Input Fields */
+        .input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+            align-items: center;
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-container label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .input-container input, .input-container select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            flex: 1;
+            min-width: 120px;
+            background-color: #f9f9f9;
+        }
+
+        .input-container button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .input-container button:hover {
+            background-color: #45a049;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .total-row {
+            font-weight: bold;
+            background-color: #e0e0e0;
+        }
+
+        /* Highlight positive and negative results */
+        .positive {
+            background-color: #d4edda; /* Light green */
+            border: 2px solid #28a745; /* Dark green border */
+        }
+
+        .negative {
+            background-color: #f8d7da; /* Light red */
+            border: 2px solid #dc3545; /* Dark red border */
+        }
+
+        /* Resize Symbols */
+        .resize-symbols {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            gap: 10px;
+            background-color: #fff;
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .resize-symbols button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            width: 30px;
+            height: 30px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .resize-symbols button:hover {
+            background-color: #45a049;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .input-container {
+                flex-direction: column;
+            }
+
+            .input-container input, .input-container select, .input-container button {
+                width: 100%;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Trading Data</h1>
+
+    <!-- Table -->
+    <table id="tradingTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>No. of Trades</th>
+                <th>Type of Trade</th>
+                <th>Recommender</th>
+                <th>Assets</th>
+                <th>Percentage</th>
+                <th>Amount</th>
+                <th>MTG Amount</th>
+                <th>Type of Win/Loss</th>
+                <th>Result</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be populated dynamically -->
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="8">Grand Total</td>
+                <td id="winRate"></td>
+                <td id="totalResult"></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Input Container -->
+    <div class="input-container">
+        <label for="typeOfTrade">Type of Trade:</label>
+        <select id="typeOfTrade" onchange="toggleRecommender()">
+            <option value="self">Self Trade</option>
+            <option value="recommend">Recommend</option>
+        </select>
+        <div id="recommenderInput" style="display: none;">
+            <label for="recommender">Recommender:</label>
+            <input type="text" id="recommender" placeholder="Enter Recommender Name">
+        </div>
+        <label for="assets">Assets:</label>
+        <input type="text" id="assets" placeholder="Enter Assets (e.g., AUD/CHF)">
+        <label for="percentage">Percentage:</label>
+        <input type="number" id="percentage" placeholder="Enter Percentage">
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" placeholder="Enter Amount">
+        <label for="mtgAmount">MTG Amount:</label>
+        <input type="number" id="mtgAmount" placeholder="Enter MTG Amount (optional)">
+        <label for="type">Type of Win/Loss:</label>
+        <select id="type">
+            <option value="win">Win</option>
+            <option value="mwin">MWin</option>
+            <option value="loss">Loss</option>
+        </select>
+        <button onclick="addTrade()">Add Trade</button>
+    </div>
+
+    <!-- Resize Symbols -->
+    <div class="resize-symbols">
+        <button onclick="resizeText('increase')">+</button>
+        <button onclick="resizeText('decrease')">-</button>
+    </div>
+
+    <script>
+        let tradeCounter = 1; // Counter for No. of Trades
+        const tradingData = []; // Array to store trades
+
+        // Function to toggle recommender input
+        function toggleRecommender() {
+            const typeOfTrade = document.getElementById("typeOfTrade").value;
+            const recommenderInput = document.getElementById("recommenderInput");
+            if (typeOfTrade === "recommend") {
+                recommenderInput.style.display = "flex";
+            } else {
+                recommenderInput.style.display = "none";
+            }
+        }
+
+        // Function to format date as DD/MM/YYYY
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // Function to calculate the result
+        function calculateResult(row) {
+            const { percentage, amount, mtgAmount, type } = row;
+            if (type === "win") {
+                return (amount * percentage) / 100;
+            } else if (type === "mwin") {
+                return ((mtgAmount || 0) * percentage) / 100 - amount;
+            } else if (type === "loss") {
+                return -(mtgAmount || 0) - amount;
+            }
+            return 0;
+        }
+
+        // Function to calculate win rate
+        function calculateWinRate() {
+            const winCount = tradingData.filter(row => row.type === "win" || row.type === "mwin").length;
+            const totalTrades = tradingData.length;
+            return ((winCount / totalTrades) * 100).toFixed(2);
+        }
+
+        // Function to calculate total result
+        function calculateTotalResult() {
+            return tradingData.reduce((total, row) => total + row.result, 0).toFixed(2);
+        }
+
+        // Function to add a new trade
+        function addTrade() {
+            const typeOfTrade = document.getElementById("typeOfTrade").value;
+            const recommender = typeOfTrade === "recommend" ? document.getElementById("recommender").value : "";
+            const assets = document.getElementById("assets").value;
+            const percentage = parseFloat(document.getElementById("percentage").value);
+            const amount = parseFloat(document.getElementById("amount").value);
+            const mtgAmount = parseFloat(document.getElementById("mtgAmount").value) || 0; // Treat blank as zero
+            const type = document.getElementById("type").value;
+
+            if (!assets || isNaN(percentage) || isNaN(amount)) {
+                alert("Please fill all required fields correctly!");
+                return;
+            }
+
+            const newTrade = {
+                date: formatDate(new Date()), // Current date in DD/MM/YYYY format
+                trades: tradeCounter++,
+                typeOfTrade,
+                recommender,
+                assets,
+                percentage,
+                amount,
+                mtgAmount,
+                type,
+                result: 0 // Placeholder, will be calculated
+            };
+
+            // Calculate result
+            newTrade.result = calculateResult(newTrade);
+
+            // Add to trading data
+            tradingData.push(newTrade);
+
+            // Update the table
+            updateTable();
+
+            // Clear input fields
+            document.getElementById("assets").value = "";
+            document.getElementById("percentage").value = "";
+            document.getElementById("amount").value = "";
+            document.getElementById("mtgAmount").value = "";
+            document.getElementById("recommender").value = "";
+        }
+
+        // Function to update the table
+        function updateTable() {
+            const tbody = document.querySelector("#tradingTable tbody");
+            tbody.innerHTML = ""; // Clear existing rows
+
+            tradingData.forEach(row => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${row.date}</td>
+                    <td>${row.trades}</td>
+                    <td>${row.typeOfTrade === "self" ? "Self Trade" : "Recommend"}</td>
+                    <td>${row.recommender || ""}</td>
+                    <td>${row.assets}</td>
+                    <td>${row.percentage}%</td>
+                    <td>${row.amount}</td>
+                    <td>${row.mtgAmount || ""}</td>
+                    <td>${row.type}</td>
+                    <td class="${row.result >= 0 ? 'positive' : 'negative'}">${row.result.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update win rate and total result
+            const winRate = calculateWinRate();
+            const totalResult = calculateTotalResult();
+
+            document.getElementById("winRate").textContent = `${winRate}%`;
+            document.getElementById("winRate").className = winRate > 60 ? "positive" : "negative";
+
+            document.getElementById("totalResult").textContent = totalResult;
+            document.getElementById("totalResult").className = totalResult >= 0 ? "positive" : "negative";
+        }
+
+        // Function to resize text
+        function resizeText(action) {
+            const body = document.body;
+            const currentSize = parseFloat(window.getComputedStyle(body, null).getPropertyValue('font-size'));
+            if (action === "increase") {
+                body.style.fontSize = (currentSize + 2) + "px";
+            } else if (action === "decrease") {
+                body.style.fontSize = (currentSize - 2) + "px";
+            }
+        }
+    </script>
+</body>
+</html>
