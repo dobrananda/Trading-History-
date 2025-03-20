@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Data</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+            font-size: 16px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Login Interface */
+        .login-container {
+            max-width: 300px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .login-container button:hover {
+            background-color: #45a049;
+        }
+
+        /* Main Content (Hidden Initially) */
+        #mainContent {
+            display: none; /* Hidden by default */
+        }
+
+        /* Navigation Styles */
+        .nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .nav button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .nav button:hover {
+            background-color: #45a049;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+            cursor: pointer;
+        }
+
+        .total-row {
+            font-weight: bold;
+            background-color: #e0e0e0;
+        }
+
+        /* Highlight positive and negative results */
+        .positive {
+            background-color: #d4edda; /* Light green */
+            border: 2px solid #28a745; /* Dark green border */
+        }
+
+        .negative {
+            background-color: #f8d7da; /* Light red */
+            border: 2px solid #dc3545; /* Dark red border */
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Interface -->
+    <div id="loginContainer" class="login-container">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <button onclick="register()">Register</button>
+    </div>
+
+    <!-- Main Content (Hidden Initially) -->
+    <div id="mainContent">
+        <!-- Navigation -->
+        <div class="nav">
+            <button onclick="showPage('tradingData')">Trading Data</button>
+            <button onclick="showPage('initialCapital')">Initial Capital Balance</button>
+        </div>
+
+        <!-- Trading Data Page -->
+        <div id="tradingData" class="page">
+            <h1>Trading Data</h1>
+            <div class="input-container">
+                <label for="typeOfTrade">Type of Trade:</label>
+                <select id="typeOfTrade" onchange="toggleRecommender()">
+                    <option value="self">Self Trade</option>
+                    <option value="recommend">Recommend</option>
+                </select>
+                <div id="recommenderInput" style="display: none;">
+                    <label for="recommender">Recommender:</label>
+                    <input type="text" id="recommender" placeholder="Enter Recommender Name">
+                </div>
+                <label for="assets">Assets:</label>
+                <input type="text" id="assets" placeholder="Enter Assets (e.g., AUD/CHF)">
+                <label for="percentage">Percentage:</label>
+                <input type="number" id="percentage" placeholder="Enter Percentage">
+                <label for="amount">Amount:</label>
+                <input type="number" id="amount" placeholder="Enter Amount">
+                <label for="mtgAmount">MTG Amount:</label>
+                <input type="number" id="mtgAmount" placeholder="Enter MTG Amount (optional)">
+                <label for="type">Type of Win/Loss:</label>
+                <select id="type">
+                    <option value="win">Win</option>
+                    <option value="mwin">MWin</option>
+                    <option value="loss">Loss</option>
+                </select>
+                <button onclick="addOrUpdateTrade()">Add/Update Trade</button>
+            </div>
+            <table id="tradingTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>No. of Trades</th>
+                        <th>Type of Trade</th>
+                        <th>Recommender</th>
+                        <th>Assets</th>
+                        <th>Percentage</th>
+                        <th>Amount</th>
+                        <th>MTG Amount</th>
+                        <th>Type of Win/Loss</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be populated dynamically -->
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="8">Grand Total</td>
+                        <td id="winRate"></td>
+                        <td id="totalResult"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Initial Capital Balance Page -->
+        <div id="initialCapital" class="page" style="display: none;">
+            <h1>Initial Capital Balance</h1>
+            <table id="capitalTable">
+                <thead>
+                    <tr>
+                        <th>Serial No.</th>
+                        <th>Dates</th>
+                        <th>Initial Amount</th>
+                        <th>Profit/Loss</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let tradingData = JSON.parse(localStorage.getItem("tradingData")) || [];
+        let capitalData = JSON.parse(localStorage.getItem("capitalData")) || [];
+        let editingIndex = null;
+
+        // Login and Registration
+        const users = JSON.parse(localStorage.getItem("users")) || [];
+
+        function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            const user = users.find(u => u.username === username && u.password === password);
+            if (user) {
+                document.getElementById("loginContainer").style.display = "none";
+                document.getElementById("mainContent").style.display = "block";
+            } else {
+                alert("Invalid username or password");
+            }
+        }
+
+        function register() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            if (username && password) {
+                users.push({ username, password });
+                localStorage.setItem("users", JSON.stringify(users));
+                alert("Registration successful! Please login.");
+            } else {
+                alert("Please enter a username and password.");
+            }
+        }
+
+        // Page Navigation
+        function showPage(pageId) {
+            document.querySelectorAll(".page").forEach(page => page.style.display = "none");
+            document.getElementById(pageId).style.display = "block";
+        }
+
+        // Trading Data Functions
+        function toggleRecommender() {
+            const typeOfTrade = document.getElementById("typeOfTrade").value;
+            const recommenderInput = document.getElementById("recommenderInput");
+            if (typeOfTrade === "recommend") {
+                recommenderInput.style.display = "flex";
+            } else {
+                recommenderInput.style.display = "none";
+            }
+        }
+
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function calculateResult(row) {
+            const { percentage, amount, mtgAmount, type } = row;
+            if (type === "win") {
+                return (amount * percentage) / 100;
+            } else if (type === "mwin") {
+                return ((mtgAmount || 0) * percentage) / 100 - amount;
+            } else if (type === "loss") {
+                return -(mtgAmount || 0) - amount;
+            }
+            return 0;
+        }
+
+        function addOrUpdateTrade() {
+            const typeOfTrade = document.getElementById("typeOfTrade").value;
+            const recommender = typeOfTrade === "recommend" ? document.getElementById("recommender").value : "";
+            const assets = document.getElementById("assets").value;
+            const percentage = parseFloat(document.getElementById("percentage").value);
+            const amount = parseFloat(document.getElementById("amount").value);
+            const mtgAmount = parseFloat(document.getElementById("mtgAmount").value) || 0;
+            const type = document.getElementById("type").value;
+
+            if (!assets || isNaN(percentage) || isNaN(amount)) {
+                alert("Please fill all required fields correctly!");
+                return;
+            }
+
+            const newTrade = {
+                date: formatDate(new Date()),
+                trades: tradeCounter++,
+                typeOfTrade,
+                recommender,
+                assets,
+                percentage,
+                amount,
+                mtgAmount,
+                type,
+                result: 0
+            };
+
+            newTrade.result = calculateResult(newTrade);
+
+            if (editingIndex !== null) {
+                tradingData[editingIndex] = newTrade;
+                editingIndex = null;
+            } else {
+                tradingData.push(newTrade);
+            }
+
+            localStorage.setItem("tradingData", JSON.stringify(tradingData));
+            updateTable();
+            clearInputs();
+        }
+
+        function loadTradeForEdit(index) {
+            const trade = tradingData[index];
+            document.getElementById("typeOfTrade").value = trade.typeOfTrade;
+            toggleRecommender();
+            document.getElementById("recommender").value = trade.recommender || "";
+            document.getElementById("assets").value = trade.assets;
+            document.getElementById("percentage").value = trade.percentage;
+            document.getElementById("amount").value = trade.amount;
+            document.getElementById("mtgAmount").value = trade.mtgAmount || "";
+            document.getElementById("type").value = trade.type;
+            editingIndex = index;
+        }
+
+        function updateTable() {
+            const tbody = document.querySelector("#tradingTable tbody");
+            tbody.innerHTML = "";
+
+            tradingData.forEach((row, index) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${row.date}</td>
+                    <td>${row.trades}</td>
+                    <td>${row.typeOfTrade === "self" ? "Self Trade" : "Recommend"}</td>
+                    <td>${row.recommender || ""}</td>
+                    <td>${row.assets}</td>
+                    <td>${row.percentage}%</td>
+                    <td>${row.amount}</td>
+                    <td>${row.mtgAmount || ""}</td>
+                    <td>${row.type}</td>
+                    <td class="${row.result >= 0 ? 'positive' : 'negative'}">${row.result.toFixed(2)}</td>
+                `;
+                tr.addEventListener("click", () => loadTradeForEdit(index));
+                tbody.appendChild(tr);
+            });
+
+            const winRate = ((tradingData.filter(row => row.type === "win" || row.type === "mwin").length / tradingData.length) * 100 || 0;
+            const totalResult = tradingData.reduce((total, row) => total + row.result, 0);
+
+            document.getElementById("winRate").textContent = `${winRate.toFixed(2)}%`;
+            document.getElementById("winRate").className = winRate > 60 ? "positive" : "negative";
+
+            document.getElementById("totalResult").textContent = totalResult.toFixed(2);
+            document.getElementById("totalResult").className = totalResult >= 0 ? "positive" : "negative";
+        }
+
+        function clearInputs() {
+            document.getElementById("assets").value = "";
+            document.getElementById("percentage").value = "";
+            document.getElementById("amount").value = "";
+            document.getElementById("mtgAmount").value = "";
+            document.getElementById("recommender").value = "";
+        }
+
+        // Initial Capital Balance Functions
+        function updateCapitalTable() {
+            const tbody = document.querySelector("#capitalTable tbody");
+            tbody.innerHTML = "";
+
+            capitalData.forEach((row, index) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${row.date}</td>
+                    <td>${row.initialAmount}</td>
+                    <td>${row.profitLoss}</td>
+                    <td>${row.percentage}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Load Data on Page Load
+        updateTable();
+        updateCapitalTable();
+    </script>
+</body>
+</html>
